@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>Sujal Gupta's Newsletter</title>
+        <title>Sujal Gupta's Tech Newsletter</title>
         <link>https://sujal2048.github.io</link>
-        <description>Weekly newsletter about technology, programming, and developer insights</description>
+        <description>Weekly newsletter on algorithms, system design, GoLang, C++, and real-world software engineering challenges from a CodeChef Problem Setter and TCS Software Engineer.</description>
         <language>en-us</language>
         <lastBuildDate>Thu, 26 Dec 2024 10:00:00 GMT</lastBuildDate>
         <atom:link href="https://sujal2048.github.io/index.xml" rel="self" type="application/rss+xml"/>
@@ -15,67 +15,123 @@
         </image>
         
         <item>
-            <title>Welcome to My Newsletter!</title>
+            <title>Welcome to My Tech Newsletter!</title>
             <link>https://sujal2048.github.io/welcome</link>
             <description>
                 <![CDATA[
-                <p>Hello and welcome to my newsletter! I'm excited to share regular updates about technology, programming, and insights from my journey.</p>
-                <p><strong>What you'll get:</strong></p>
+                <h2>🚀 Welcome to My Tech Newsletter!</h2>
+                <p>Hello fellow developers! I'm Sujal Gupta, a Software Engineer at TCS and former CodeChef Problem Setter. This newsletter will bring you:</p>
                 <ul>
-                    <li>Weekly tech updates</li>
-                    <li>Programming tutorials</li>
-                    <li>Project showcases</li>
-                    <li>Career tips for developers</li>
+                    <li><strong>Algorithm insights</strong> from my CodeChef problem-setting experience</li>
+                    <li><strong>System Design patterns</strong> from building high-throughput microservices at TCS</li>
+                    <li><strong>GoLang & C++ tips</strong> for performance-critical applications</li>
+                    <li><strong>Real project breakdowns</strong> like my Auto-Complete Trie implementation</li>
                 </ul>
-                <p>Stay tuned for the first edition coming soon!</p>
+                <p>Stay tuned for deep dives into software engineering challenges I face daily!</p>
+                <p><em>- Sujal Gupta</em></p>
                 ]]>
             </description>
             <pubDate>Thu, 26 Dec 2024 10:00:00 GMT</pubDate>
             <guid isPermaLink="false">welcome-001</guid>
-            <category>announcement</category>
+            <category>welcome</category>
+            <category>introduction</category>
         </item>
         
         <item>
-            <title>Building a Newsletter System with Cloudflare</title>
-            <link>https://sujal2048.github.io/cloudflare-newsletter</link>
+            <title>Trie Data Structure: Beyond Auto-Complete</title>
+            <link>https://sujal2048.github.io/trie-deep-dive</link>
             <description>
                 <![CDATA[
-                <p>Learn how I built a complete newsletter system using Cloudflare Workers, D1 database, and GitHub Pages.</p>
-                <p><strong>Key features:</strong></p>
+                <h2>🌳 Trie Data Structure: Beyond Auto-Complete</h2>
+                <p>After building my Auto-Complete project, I discovered many more applications for Trie data structures:</p>
+                <h3>Key Applications:</h3>
                 <ol>
-                    <li>Automated RSS feed checking</li>
-                    <li>Email subscription management</li>
-                    <li>Bot protection with Turnstile</li>
-                    <li>Scheduled newsletter sending</li>
+                    <li><strong>IP Routing</strong> - Longest prefix matching in network routers</li>
+                    <li><strong>Spell Checkers</strong> - Efficient dictionary implementations</li>
+                    <li><strong>Bioinformatics</strong> - DNA sequence pattern matching</li>
+                    <li><strong>File Systems</strong> - Directory structure representation</li>
                 </ol>
-                <p>Perfect for developers wanting to start their own newsletter!</p>
+                <h3>Optimization Techniques:</h3>
+                <pre><code>class TrieNode {
+public:
+    TrieNode* children[26];
+    bool isEndOfWord;
+    int prefixCount;  // For counting prefixes
+};</code></pre>
+                <p>Learn how to implement compressed Tries (Radix Trees) for memory efficiency!</p>
                 ]]>
             </description>
             <pubDate>Tue, 24 Dec 2024 14:30:00 GMT</pubDate>
             <guid isPermaLink="false">tutorial-002</guid>
-            <category>tutorial</category>
-            <category>cloudflare</category>
+            <category>data-structures</category>
+            <category>algorithms</category>
+            <category>c++</category>
         </item>
         
         <item>
-            <title>JavaScript Tips for 2024</title>
-            <link>https://sujal2048.github.io/js-tips-2024</link>
+            <title>Building Low-Latency Microservices in GoLang</title>
+            <link>https://sujal2048.github.io/golang-microservices</link>
             <description>
                 <![CDATA[
-                <p>Essential JavaScript tips and best practices for modern web development.</p>
+                <h2>⚡ Building Low-Latency Microservices in GoLang</h2>
+                <p>At TCS, I built exchange simulators processing millions of orders. Here's how we achieved sub-millisecond latency:</p>
+                <h3>Key Strategies:</h3>
                 <ul>
-                    <li>New ES2024 features</li>
-                    <li>Performance optimization techniques</li>
-                    <li>Async/await patterns</li>
-                    <li>Common pitfalls to avoid</li>
+                    <li><strong>Goroutine Pools</strong> - Avoid goroutine spawning overhead</li>
+                    <li><strong>Memory Pooling</strong> - Reuse objects to reduce GC pressure</li>
+                    <li><strong>Zero-Copy Serialization</strong> - Using protocol buffers efficiently</li>
+                    <li><strong>Linux Tuning</strong> - TCP_NODELAY, SO_REUSEPORT optimizations</li>
                 </ul>
-                <p>Level up your JavaScript skills with these practical tips!</p>
+                <h3>Sample Code:</h3>
+                <pre><code>// Worker pool pattern
+func NewWorkerPool(size int) *WorkerPool {
+    pool := &WorkerPool{
+        tasks: make(chan Task, 1000),
+        workers: size,
+    }
+    for i := 0; i < size; i++ {
+        go pool.worker()
+    }
+    return pool
+}</code></pre>
+                <p>Join next week's edition where I'll cover Kafka integration patterns!</p>
                 ]]>
             </description>
             <pubDate>Mon, 23 Dec 2024 09:15:00 GMT</pubDate>
-            <guid isPermaLink="false">tips-003</guid>
-            <category>javascript</category>
-            <category>programming</category>
+            <guid isPermaLink="false">golang-003</guid>
+            <category>golang</category>
+            <category>microservices</category>
+            <category>performance</category>
+        </item>
+        
+        <item>
+            <title>Problem Setting at CodeChef: Creating Balanced Challenges</title>
+            <link>https://sujal2048.github.io/codechef-problems</link>
+            <description>
+                <![CDATA[
+                <h2>🎯 Problem Setting at CodeChef: Creating Balanced Challenges</h2>
+                <p>During my CodeChef internship, I learned what makes a good competitive programming problem:</p>
+                <h3>Problem Design Principles:</h3>
+                <ul>
+                    <li><strong>Clear Statement</strong> - No ambiguity in problem description</li>
+                    <li><strong>Progressive Difficulty</strong> - Multiple approaches possible</li>
+                    <li><strong>Comprehensive Test Cases</strong> - Edge cases and large inputs</li>
+                    <li><strong>Educational Value</strong> - Teaches a specific concept</li>
+                </ul>
+                <h3>Example Problem Structure:</h3>
+                <pre><code>Problem: Find the k-th smallest element
+Difficulty: Medium
+Concepts: QuickSelect, Priority Queues
+Expected Time: O(n) average, O(n log k) alternative
+Test Cases: 1 ≤ n ≤ 10^6, 1 ≤ k ≤ n</code></pre>
+                <p>Next week: I'll share my favorite DP problem design!</p>
+                ]]>
+            </description>
+            <pubDate>Sat, 21 Dec 2024 16:45:00 GMT</pubDate>
+            <guid isPermaLink="false">codechef-004</guid>
+            <category>competitive-programming</category>
+            <category>algorithms</category>
+            <category>codechef</category>
         </item>
     </channel>
 </rss>
