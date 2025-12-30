@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sujal Gupta | Newsletter & Portfolio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .profile {
+            display: inline-block;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .profile-pic {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #4f46e5;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .social-btn {
+            padding: 8px 16px;
+            background: #4f46e5;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .newsletter-box {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #10b981;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+        }
+        
+        .posts-container {
+            margin-top: 20px;
+        }
+        
+        .post-card {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4f46e5;
+            transition: transform 0.3s;
+        }
+        
+        .post-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .post-title {
+            color: #1f2937;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .post-date {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .rss-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ff6600;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px 15px; }
+            .profile { padding: 20px; }
+            .main-content { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="profile">
+                <img src="https://avatars.githubusercontent.com/u/YOUR_GITHUB_ID" 
+                     alt="Sujal Gupta" class="profile-pic"
+                     onerror="this.src='https://ui-avatars.com/api/?name=Sujal+Gupta&background=4f46e5&color=fff&size=150'">
+                <h1>Sujal Gupta</h1>
+                <p class="subtitle">Developer • Tech Enthusiast • Content Creator</p>
+                
+                <div class="social-links">
+                    <a href="https://github.com/sujal2048" class="social-btn" target="_blank">
+                        <span>GitHub</span>
+                    </a>
+                    <a href="https://linkedin.com/in/YOUR_LINKEDIN" class="social-btn" target="_blank">
+                        <span>LinkedIn</span>
+                    </a>
+                    <a href="https://twitter.com/YOUR_TWITTER" class="social-btn" target="_blank">
+                        <span>Twitter</span>
+                    </a>
+                    <a href="mailto:sujal.gupta@example.com" class="social-btn">
+                        <span>Email</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <section class="section">
+                <h2>📬 Subscribe to My Newsletter</h2>
+                <div class="newsletter-box">
+                    <p>Get weekly updates on technology, programming tips, and industry insights directly in your inbox.</p>
+                    <div style="margin-top: 20px;">
+                        <a href="https://web.sujal.workers.dev/subscribe" class="btn" target="_blank">
+                            Subscribe Now
+                        </a>
+                        <a href="https://sujal2048.github.io/index.xml" class="rss-badge" target="_blank">
+                            📡 RSS Feed
+                        </a>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="section">
+                <h2>📝 Latest Updates</h2>
+                <div class="posts-container" id="postsContainer">
+                    <!-- Posts loaded from RSS -->
+                    <div class="post-card">
+                        <h3 class="post-title">Welcome to My Newsletter!</h3>
+                        <p>Thank you for visiting my website. Subscribe to stay updated with my latest content.</p>
+                        <span class="post-date">December 2024</span>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="section">
+                <h2>💼 About Me</h2>
+                <p>Hi, I'm Sujal Gupta! I'm passionate about technology, software development, and sharing knowledge through my newsletter.</p>
+                <p>Through my newsletter, I share:</p>
+                <ul style="margin: 15px 0; padding-left: 20px; color: #4b5563;">
+                    <li>Programming tutorials and tips</li>
+                    <li>Technology trends and insights</li>
+                    <li>Project showcases</li>
+                    <li>Career advice for developers</li>
+                </ul>
+            </section>
+            
+            <section class="section">
+                <h2>🔗 Quick Actions</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="https://web.sujal.workers.dev/subscribe" class="btn" target="_blank">Subscribe</a>
+                    <a href="https://web.sujal.workers.dev/unsubscribe" class="btn btn-danger" target="_blank">Unsubscribe</a>
+                    <a href="https://web.sujal.workers.dev/contact" class="btn btn-secondary" target="_blank">Contact</a>
+                    <a href="https://github.com/sujal2048" class="btn" target="_blank">GitHub</a>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>© 2024 Sujal Gupta. All rights reserved.</p>
+            <p>Website hosted on GitHub Pages | Newsletter powered by Cloudflare Workers</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/sujal2048/sujal2048.github.io" 
+                   style="color: white; text-decoration: underline;" target="_blank">
+                    View Source Code
+                </a>
+            </p>
+        </footer>
+    </div>
+    
+    <script>
+        // Load posts from RSS feed
+        async function loadPosts() {
+            try {
+                const response = await fetch('index.xml');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, 'text/xml');
+                
+                const items = xml.querySelectorAll('item');
+                const container = document.getElementById('postsContainer');
+                
+                if (items.length > 0) {
+                    container.innerHTML = '';
+                    
+                    items.forEach((item, index) => {
+                        if (index < 3) { // Show only 3 latest
+                            const title = item.querySelector('title')?.textContent || 'Untitled';
+                            const link = item.querySelector('link')?.textContent || '#';
+                            const date = item.querySelector('pubDate')?.textContent || '';
+                            const desc = item.querySelector('description')?.textContent || '';
+                            
+                            const card = document.createElement('div');
+                            card.className = 'post-card';
+                            card.innerHTML = `
+                                <h3 class="post-title">${title}</h3>
+                                <p>${desc.substring(0, 80)}...</p>
+                                <span class="post-date">${formatDate(date)}</span>
+                            `;
+                            
+                            card.onclick = () => window.open(link, '_blank');
+                            card.style.cursor = 'pointer';
+                            container.appendChild(card);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.log('RSS feed will load soon');
+            }
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch {
+                return dateStr;
+            }
+        }
+        
+        // Load on page load
+        window.addEventListener('load', loadPosts);
+    </script>
+</body>
+</html>
