@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Sujal Gupta's Newsletter</title>
+        <link>https://sujal2048.github.io</link>
+        <description>Weekly newsletter about technology, programming, and developer insights</description>
+        <language>en-us</language>
+        <lastBuildDate>Thu, 26 Dec 2024 10:00:00 GMT</lastBuildDate>
+        <atom:link href="https://sujal2048.github.io/index.xml" rel="self" type="application/rss+xml"/>
+        <ttl>60</ttl>
+        <image>
+            <url>https://avatars.githubusercontent.com/u/YOUR_GITHUB_ID</url>
+            <title>Sujal Gupta</title>
+            <link>https://sujal2048.github.io</link>
+        </image>
+        
+        <item>
+            <title>Welcome to My Newsletter!</title>
+            <link>https://sujal2048.github.io/welcome</link>
+            <description>
+                <![CDATA[
+                <p>Hello and welcome to my newsletter! I'm excited to share regular updates about technology, programming, and insights from my journey.</p>
+                <p><strong>What you'll get:</strong></p>
+                <ul>
+                    <li>Weekly tech updates</li>
+                    <li>Programming tutorials</li>
+                    <li>Project showcases</li>
+                    <li>Career tips for developers</li>
+                </ul>
+                <p>Stay tuned for the first edition coming soon!</p>
+                ]]>
+            </description>
+            <pubDate>Thu, 26 Dec 2024 10:00:00 GMT</pubDate>
+            <guid isPermaLink="false">welcome-001</guid>
+            <category>announcement</category>
+        </item>
+        
+        <item>
+            <title>Building a Newsletter System with Cloudflare</title>
+            <link>https://sujal2048.github.io/cloudflare-newsletter</link>
+            <description>
+                <![CDATA[
+                <p>Learn how I built a complete newsletter system using Cloudflare Workers, D1 database, and GitHub Pages.</p>
+                <p><strong>Key features:</strong></p>
+                <ol>
+                    <li>Automated RSS feed checking</li>
+                    <li>Email subscription management</li>
+                    <li>Bot protection with Turnstile</li>
+                    <li>Scheduled newsletter sending</li>
+                </ol>
+                <p>Perfect for developers wanting to start their own newsletter!</p>
+                ]]>
+            </description>
+            <pubDate>Tue, 24 Dec 2024 14:30:00 GMT</pubDate>
+            <guid isPermaLink="false">tutorial-002</guid>
+            <category>tutorial</category>
+            <category>cloudflare</category>
+        </item>
+        
+        <item>
+            <title>JavaScript Tips for 2024</title>
+            <link>https://sujal2048.github.io/js-tips-2024</link>
+            <description>
+                <![CDATA[
+                <p>Essential JavaScript tips and best practices for modern web development.</p>
+                <ul>
+                    <li>New ES2024 features</li>
+                    <li>Performance optimization techniques</li>
+                    <li>Async/await patterns</li>
+                    <li>Common pitfalls to avoid</li>
+                </ul>
+                <p>Level up your JavaScript skills with these practical tips!</p>
+                ]]>
+            </description>
+            <pubDate>Mon, 23 Dec 2024 09:15:00 GMT</pubDate>
+            <guid isPermaLink="false">tips-003</guid>
+            <category>javascript</category>
+            <category>programming</category>
+        </item>
+    </channel>
+</rss>
