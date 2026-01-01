@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Low-Latency Systems with GoLang and C++ • Sujal Gupta</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="post-nav">
+            <a href="../../" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <a href="../../index.xml" class="rss-link" target="_blank">
+                <i class="fas fa-rss"></i> RSS
+            </a>
+        </nav>
+
+        <!-- Post Header -->
+        <header class="post-header">
+            <div class="post-meta">
+                <span class="post-category">□ System-Design</span>
+                <span class="post-date">● Sujal Gupta published on 26-Dec-2024</span>
+            </div>
+            <h1 class="post-title-main">Building Low-Latency Systems with GoLang and C++</h1>
+            <div class="post-tags-main">
+                <span class="tag">GoLang</span>
+                <span class="tag">C++</span>
+                <span class="tag">Linux</span>
+                <span class="tag">Performance</span>
+                <span class="tag">TCS</span>
+            </div>
+        </header>
+
+        <!-- Post Content -->
+        <article class="post-content">
+            <p class="post-intro">
+                From my experience building NSE/BSE exchange simulators at TCS, achieving sub-millisecond 
+                latency requires careful architecture, optimized code, and deep system understanding.
+            </p>
+
+            <h2>Architecture Overview</h2>
+            <p>The exchange simulator processes millions of order events daily. Here's the high-level architecture:</p>
+            
+            <pre><code class="language-go">// Worker pool for concurrent processing
+type WorkerPool struct {
+    workers int
+    tasks   chan Task
+}
+
+func NewWorkerPool(workers int) *WorkerPool {
+    return &WorkerPool{
+        workers: workers,
+        tasks:   make(chan Task, 10000),
+    }
+}</code></pre>
+
+            <h2>Key Optimization Techniques</h2>
+            
+            <h3>1. Goroutine Pooling</h3>
+            <p>Avoid goroutine creation overhead by reusing workers:</p>
+            <pre><code>// Fixed pool of 1000 workers
+pool := NewWorkerPool(1000)
+for i := 0; i < 1000; i++ {
+    go pool.worker()
+}</code></pre>
+
+            <h3>2. Memory Pooling</h3>
+            <p>Reduce GC pressure with sync.Pool:</p>
+            <pre><code>var orderPool = sync.Pool{
+    New: func() interface{} {
+        return &Order{}
+    },
+}
+
+func getOrder() *Order {
+    return orderPool.Get().(*Order)
+}
+
+func putOrder(o *Order) {
+    orderPool.Put(o)
+}</code></pre>
+
+            <h3>3. Linux Kernel Tuning</h3>
+            <ul>
+                <li><strong>TCP_NODELAY:</strong> Disable Nagle's algorithm</li>
+                <li><strong>SO_REUSEPORT:</strong> Allow multiple sockets on same port</li>
+                <li><strong>CPU affinity:</strong> Pin goroutines to specific cores</li>
+                <li><strong>Hugepages:</strong> 2MB pages for memory-intensive operations</li>
+            </ul>
+
+            <h3>4. Zero-Copy Serialization</h3>
+            <p>Using Protocol Buffers with zero-copy optimization:</p>
+            <pre><code>message Order {
+    bytes id = 1;
+    int64 timestamp = 2;
+    double price = 3;
+    int32 quantity = 4;
+    OrderType type = 5;
+}</code></pre>
+
+            <h2>Performance Results</h2>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Before Optimization</th>
+                    <th>After Optimization</th>
+                </tr>
+                <tr>
+                    <td>Average Latency</td>
+                    <td>5.2ms</td>
+                    <td>0.8ms</td>
+                </tr>
+                <tr>
+                    <td>Throughput</td>
+                    <td>50K orders/sec</td>
+                    <td>250K orders/sec</td>
+                </tr>
+                <tr>
+                    <td>CPU Usage</td>
+                    <td>85%</td>
+                    <td>65%</td>
+                </tr>
+            </table>
+
+            <h2>Lessons Learned</h2>
+            <ol>
+                <li>Profile before optimizing - identify real bottlenecks</li>
+                <li>Batch operations when possible</li>
+                <li>Use appropriate data structures (arrays vs maps)</li>
+                <li>Monitor GC pauses and memory usage</li>
+                <li>Test with production-like load patterns</li>
+            </ol>
+
+            <div class="callout">
+                <p><strong>Note:</strong> These optimizations were implemented for TCS's order routing 
+                system handling real-time NSE/BSE market data.</p>
+            </div>
+        </article>
+
+        <!-- Related Posts -->
+        <div class="related-posts">
+            <h3>Related Writings</h3>
+            <div class="related-grid">
+                <a href="../advanced-dsa/" class="related-card">
+                    <h4>Advanced Data Structures for Competitive Programming</h4>
+                    <p>Segment trees, Fenwick trees, and Trie optimizations</p>
+                </a>
+                <a href="../kafka-patterns/" class="related-card">
+                    <h4>Kafka Integration Patterns for Real-Time Systems</h4>
+                    <p>Producer-consumer patterns and exactly-once semantics</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="post-footer">
+            <p>Want more insights like this? <a href="https://newsletter.sujal.workers.dev/subscribe" target="_blank">Subscribe to my newsletter</a></p>
+            <div class="footer-links">
+                <a href="../../">Home</a>
+                <a href="../../index.xml">RSS</a>
+                <a href="https://github.com/sujal2048">GitHub</a>
+                <a href="https://linkedin.com/in/sujalgupta">LinkedIn</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Syntax highlighting for code blocks
+        document.querySelectorAll('pre code').forEach((block) => {
+            block.classList.add('language-go');
+        });
+    </script>
+</body>
+</html>
