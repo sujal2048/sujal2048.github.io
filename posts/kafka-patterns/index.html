@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Integration Patterns for Real-Time Systems • Sujal Gupta</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="post-nav">
+            <a href="../../" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <a href="../../index.xml" class="rss-link" target="_blank">
+                <i class="fas fa-rss"></i> RSS
+            </a>
+        </nav>
+
+        <!-- Post Header -->
+        <header class="post-header">
+            <div class="post-meta">
+                <span class="post-category">□ Distributed-Systems</span>
+                <span class="post-date">● Sujal Gupta published on 20-Dec-2024</span>
+            </div>
+            <h1 class="post-title-main">Kafka Integration Patterns for Real-Time Systems</h1>
+            <div class="post-tags-main">
+                <span class="tag">Kafka</span>
+                <span class="tag">GoLang</span>
+                <span class="tag">Real-Time</span>
+                <span class="tag">Microservices</span>
+                <span class="tag">TCS</span>
+                <span class="tag">Distributed Systems</span>
+            </div>
+        </header>
+
+        <!-- Post Content -->
+        <article class="post-content">
+            <p class="post-intro">
+                From integrating Apache Kafka at TCS for NSDL/CDSL depository holding feeds, 
+                I've learned patterns and best practices for building robust real-time systems. 
+                Here's a comprehensive guide to Kafka integration patterns.
+            </p>
+
+            <h2>Architecture: NSDL/CDSL Depository Feed Processing</h2>
+            
+            <div class="architecture-diagram">
+                <div class="kafka-flow">
+                    <div class="stage">
+                        <h3>1. Data Sources</h3>
+                        <p>NSDL Depository Feed</p>
+                        <p>CDSL Depository Feed</p>
+                        <p>Exchange Data (NSE/BSE)</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="stage">
+                        <h3>2. Kafka Producers</h3>
+                        <p>GoLang Services</p>
+                        <p>Schema Registry</p>
+                        <p>Idempotent Producers</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="stage">
+                        <h3>3. Kafka Topics</h3>
+                        <p>holding-updates</p>
+                        <p>order-events</p>
+                        <p>audit-logs</p>
+                        <p>dead-letter</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="stage">
+                        <h3>4. Kafka Consumers</h3>
+                        <p>Consumer Groups</p>
+                        <p>Exactly-Once Processing</p>
+                        <p>Parallel Consumers</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="stage">
+                        <h3>5. Sinks</h3>
+                        <p>Oracle Database</p>
+                        <p>Redis Cache</p>
+                        <p>Monitoring System</p>
+                        <p>Analytics Pipeline</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>1. Producer Patterns</h2>
+
+            <h3>1.1 Idempotent Producer Implementation</h3>
+            
+            <pre><code class="language-go">// GoLang Kafka Producer with idempotence
+package main
+
+import (
+    "github.com/segmentio/kafka-go"
+    "github.com/segmentio/kafka-go/snappy"
+    "context"
+    "time"
+)
+
+type IdempotentProducer struct {
+    writer *kafka.Writer
+}
+
+func NewIdempotentProducer(brokers []string, topic string) *IdempotentProducer {
+    return &IdempotentProducer{
+        writer: &kafka.Writer{
+            Addr:         kafka.TCP(brokers...),
+            Topic:        topic,
+            Balancer:     &kafka.LeastBytes{},
+            RequiredAcks: kafka.RequireAll, // Wait for all replicas
+            Async:        false,           // Synchronous production
+            Compression:  snappy.NewCompression(),
+            BatchTimeout: 50 * time.Millisecond,
+            BatchSize:    100,
+            
+            // Idempotence configuration
+            Transport: &kafka.Transport{
+                Idempotent: true,
+                TransactionalID: &quot;producer-1&quot;,
+            },
+        },
+    }
+}
+
+func (p *IdempotentProducer) Produce(ctx context.Context, key, value []byte) error {
+    message := kafka.Message{
+        Key:   key,
+        Value: value,
+        Time:  time.Now(),
+        Headers: []kafka.Header{
+            {Key: &quot;producer-id&quot;, Value: []byte(&quot;holding-service&quot;)},
+            {Key: &quot;message-id&quot;, Value: []byte(generateUUID())},
+        },
+    }
+    
+    // Transactional production
+    err := p.writer.WriteMessages(ctx, message)
+    if err != nil {
+        // Implement retry logic with exponential backoff
+        return p.retryProduce(ctx, message, err)
+    }
+    
+    return nil
+}
+
+func (p *IdempotentProducer) retryProduce(ctx context.Context, msg kafka.Message, err error) error {
+    backoff := time.Millisecond * 100
+    maxRetries := 5
+    
+    for i := 0; i < maxRetries; i++ {
+        time.Sleep(backoff)
+        if err := p.writer.WriteMessages(ctx, msg); err == nil {
+            return nil
+        }
+        backoff *= 2
+    }
+    
+    return err
+}</code></pre>
+
+            <h3>1.2 Schema Evolution with Avro</h3>
+            
+            <pre><code class="language-go">// Avro schema management for holding updates
+package schemas
+
+// HoldingUpdate Avro schema
+const HoldingUpdateSchema = `{
+  &quot;type&quot;: &quot;record&quot;,
+  &quot;name&quot;: &quot;HoldingUpdate&quot;,
+  &quot;namespace&quot;: &quot;com.tcs.depository&quot;,
+  &quot;fields&quot;: [
+    {&quot;name&quot;: &quot;clientId&quot;, &quot;type&quot;: &quot;string&quot;},
+    {&quot;name&quot;: &quot;isin&quot;, &quot;type&quot;: &quot;string&quot;},
+    {&quot;name&quot;: &quot;quantity&quot;, &quot;type&quot;: &quot;long&quot;},
+    {&quot;name&quot;: &quot;averagePrice&quot;, &quot;type&quot;: &quot;double&quot;},
+    {&quot;name&quot;: &quot;updateType&quot;, &quot;type&quot;: {&quot;type&quot;: &quot;enum&quot;, &quot;name&quot;: &quot;UpdateType&quot;, &quot;symbols&quot;: [&quot;BUY&quot;, &quot;SELL&quot;, &quot;SPLIT&quot;, &quot;BONUS&quot;]}},
+    {&quot;name&quot;: &quot;timestamp&quot;, &quot;type&quot;: &quot;long&quot;, &quot;logicalType&quot;: &quot;timestamp-millis&quot;},
+    {&quot;name&quot;: &quot;version&quot;, &quot;type&quot;: &quot;int&quot;, &quot;default&quot;: 1}
+  ]
+}`
+
+// Schema evolution: Adding new field (backward compatible)
+const HoldingUpdateSchemaV2 = `{
+  &quot;type&quot;: &quot;record&quot;,
+  &quot;name&quot;: &quot;HoldingUpdate&quot;,
+  &quot;namespace&quot;: &quot;com.tcs.depository&quot;,
+  &quot;fields&quot;: [
+    {&quot;name&quot;: &quot;clientId&quot;, &quot;type&quot;: &quot;string&quot;},
+    {&quot;name&quot;: &quot;isin&quot;, &quot;type&quot;: &quot;string&quot;},
+    {&quot;name&quot;: &quot;quantity&quot;, &quot;type&quot;: &quot;long&quot;},
+    {&quot;name&quot;: &quot;averagePrice&quot;, &quot;type&quot;: &quot;double&quot;},
+    {&quot;name&quot;: &quot;updateType&quot;, &quot;type&quot;: {&quot;type&quot;: &quot;enum&quot;, &quot;name&quot;: &quot;UpdateType&quot;, &quot;symbols&quot;: [&quot;BUY&quot;, &quot;SELL&quot;, &quot;SPLIT&quot;, &quot;BONUS&quot;, &quot;MERGER&quot;]}},
+    {&quot;name&quot;: &quot;timestamp&quot;, &quot;type&quot;: &quot;long&quot;, &quot;logicalType&quot;: &quot;timestamp-millis&quot;},
+    {&quot;name&quot;: &quot;version&quot;, &quot;type&quot;: &quot;int&quot;, &quot;default&quot;: 2},
+    {&quot;name&quot;: &quot;exchange&quot;, &quot;type&quot;: [&quot;null&quot;, &quot;string&quot;], &quot;default&quot;: null}  // New optional field
+  ]
+}`
+
+// Schema registry client
+type SchemaRegistryClient struct {
+    registryURL string
+    client      *http.Client
+}
+
+func (src *SchemaRegistryClient) GetSchema(schemaID int) (string, error) {
+    resp, err := src.client.Get(fmt.Sprintf(&quot;%s/schemas/ids/%d&quot;, src.registryURL, schemaID))
+    if err != nil {
+        return &quot;&quot;, err
+    }
+    defer resp.Body.Close()
+    
+    var schemaResp struct {
+        Schema string `json:&quot;schema&quot;`
+    }
+    
+    if err := json.NewDecoder(resp.Body).Decode(&amp;schemaResp); err != nil {
+        return &quot;&quot;, err
+    }
+    
+    return schemaResp.Schema, nil
+}</code></pre>
+
+            <h2>2. Consumer Patterns</h2>
+
+            <h3>2.1 Exactly-Once Processing</h3>
+            
+            <pre><code class="language-go">// Exactly-once consumer with idempotent processing
+package main
+
+import (
+    &quot;github.com/segmentio/kafka-go&quot;
+    &quot;context&quot;
+    &quot;sync&quot;
+    &quot;time&quot;
+)
+
+type ExactlyOnceConsumer struct {
+    reader      *kafka.Reader
+    db          *sql.DB
+    processed   map[string]bool // In-memory deduplication
+    mu          sync.RWMutex
+}
+
+func NewExactlyOnceConsumer(brokers []string, topic, groupID string) *ExactlyOnceConsumer {
+    return &amp;ExactlyOnceConsumer{
+        reader: kafka.NewReader(kafka.ReaderConfig{
+            Brokers:        brokers,
+            Topic:          topic,
+            GroupID:        groupID,
+            MinBytes:       10e3, // 10KB
+            MaxBytes:       10e6, // 10MB
+            CommitInterval: time.Second,
+            StartOffset:    kafka.FirstOffset,
+            
+            // Enable idempotent consumption
+            IsolationLevel: kafka.ReadCommitted,
+        }),
+        processed: make(map[string]bool),
+    }
+}
+
+func (c *ExactlyOnceConsumer) ProcessMessages(ctx context.Context) error {
+    for {
+        select {
+        case &lt;-ctx.Done():
+            return ctx.Err()
+        default:
+            msg, err := c.reader.FetchMessage(ctx)
+            if err != nil {
+                return err
+            }
+            
+            // Check if already processed
+            messageID := string(msg.Headers.Get(&quot;message-id&quot;))
+            c.mu.RLock()
+            if c.processed[messageID] {
+                c.mu.RUnlock()
+                c.reader.CommitMessages(ctx, msg)
+                continue
+            }
+            c.mu.RUnlock()
+            
+            // Process with idempotent operation
+            if err := c.processMessage(msg); err != nil {
+                // Send to dead-letter queue
+                c.sendToDLQ(msg, err)
+                continue
+            }
+            
+            // Mark as processed
+            c.mu.Lock()
+            c.processed[messageID] = true
+            c.mu.Unlock()
+            
+            // Commit offset
+            if err := c.reader.CommitMessages(ctx, msg); err != nil {
+                return err
+            }
+        }
+    }
+}
+
+func (c *ExactlyOnceConsumer) processMessage(msg kafka.Message) error {
+    // Idempotent database operation
+    tx, err := c.db.Begin()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+    
+    // Use UPSERT to ensure idempotence
+    _, err = tx.Exec(`
+        INSERT INTO holding_updates 
+        (message_id, client_id, isin, quantity, processed_at)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (message_id) DO NOTHING
+    `, string(msg.Headers.Get(&quot;message-id&quot;)),
+       // Parse and extract data from msg.Value
+    )
+    
+    if err != nil {
+        return err
+    }
+    
+    return tx.Commit()
+}</code></pre>
+
+            <h3>2.2 Consumer Group Rebalancing Strategies</h3>
+            
+            <pre><code class="language-go">// Custom rebalancing strategy
+type StickyAssignor struct {
+    memberID      string
+    generationID  int32
+    assignments   map[string][]int32
+}
+
+func (sa *StickyAssignor) Assign(members map[string]kafka.GroupMember, topics map[string][]int32) (map[string][]int32, error) {
+    assignments := make(map[string][]int32)
+    
+    // Implement sticky assignment logic
+    // 1. Preserve existing assignments when possible
+    // 2. Minimize partition movement during rebalance
+    // 3. Balance load across consumers
+    
+    for memberID, member := range members {
+        // Custom assignment logic based on:
+        // - Current assignments
+        // - Consumer capacity
+        // - Partition affinity
+        assignments[memberID] = sa.stickyAssignment(member, topics)
+    }
+    
+    sa.assignments = assignments
+    return assignments, nil
+}
+
+// Graceful shutdown with cooperative rebalancing
+func (c *ExactlyOnceConsumer) Shutdown(ctx context.Context) error {
+    // 1. Stop fetching new messages
+    c.reader.SetOffset(kafka.LastOffset)
+    
+    // 2. Complete processing of current batch
+    c.waitForCompletion()
+    
+    // 3. Revoke partitions gracefully
+    if err := c.reader.Close(); err != nil {
+        return err
+    }
+    
+    // 4. Wait for rebalance to complete
+    select {
+    case &lt;-ctx.Done():
+        return ctx.Err()
+    case &lt;-time.After(30 * time.Second):
+        return nil
+    }
+}</code></pre>
+
+            <h2>3. Advanced Patterns</h2>
+
+            <h3>3.1 Dead Letter Queue Pattern</h3>
+            
+            <pre><code class="language-go">// DLQ handler for failed messages
+type DLQHandler struct {
+    dlqProducer *kafka.Writer
+    maxRetries  int
+    retryDelay  time.Duration
+}
+
+func (dh *DLQHandler) HandleFailure(msg kafka.Message, err error, retryCount int) error {
+    if retryCount &lt; dh.maxRetries {
+        // Retry with exponential backoff
+        delay := dh.retryDelay * time.Duration(math.Pow(2, float64(retryCount)))
+        time.Sleep(delay)
+        return kafka.ErrRetry
+    }
+    
+    // Send to DLQ
+    dlqMsg := kafka.Message{
+        Key:   msg.Key,
+        Value: msg.Value,
+        Headers: append(msg.Headers,
+            kafka.Header{Key: &quot;original-topic&quot;, Value: []byte(msg.Topic)},
+            kafka.Header{Key: &quot;failure-reason&quot;, Value: []byte(err.Error())},
+            kafka.Header{Key: &quot;retry-count&quot;, Value: []byte(strconv.Itoa(retryCount))},
+            kafka.Header{Key: &quot;failed-at&quot;, Value: []byte(time.Now().Format(time.RFC3339))},
+        ),
+    }
+    
+    return dh.dlqProducer.WriteMessages(context.Background(), dlqMsg)
+}</code></pre>
+
+            <h3>3.2 Change Data Capture (CDC) Pattern</h3>
+            
+            <pre><code class="language-go">// CDC from Oracle to Kafka
+type OracleCDC struct {
+    db        *sql.DB
+    producer  *kafka.Writer
+    lastLSN   string
+}
+
+func (cdc *OracleCDC) CaptureChanges(ctx context.Context) error {
+    // Query Oracle redo logs or use LogMiner
+    rows, err := cdc.db.QueryContext(ctx, `
+        SELECT scn, operation, table_name, row_data
+        FROM v$logmnr_contents
+        WHERE scn &gt; :1
+        ORDER BY scn
+    `, cdc.lastLSN)
+    
+    if err != nil {
+        return err
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var scn, operation, tableName string
+        var rowData []byte
+        
+        if err := rows.Scan(&amp;scn, &amp;operation, &amp;tableName, &amp;rowData); err != nil {
+            return err
+        }
+        
+        // Convert to Kafka message
+        message := kafka.Message{
+            Key:   []byte(fmt.Sprintf(&quot;%s:%s&quot;, tableName, scn)),
+            Value: rowData,
+            Headers: []kafka.Header{
+                {Key: &quot;operation&quot;, Value: []byte(operation)},
+                {Key: &quot;table&quot;, Value: []byte(tableName)},
+                {Key: &quot;scn&quot;, Value: []byte(scn)},
+            },
+        }
+        
+        if err := cdc.producer.WriteMessages(ctx, message); err != nil {
+            return err
+        }
+        
+        cdc.lastLSN = scn
+    }
+    
+    return rows.Err()
+}</code></pre>
+
+            <h3>3.3 Exactly-Once Sink to Database</h3>
+            
+            <pre><code class="language-go">// Idempotent sink to Oracle
+type OracleSink struct {
+    db         *sql.DB
+    processed  *lru.Cache // LRU cache for deduplication
+    batchSize  int
+}
+
+func (sink *OracleSink) WriteBatch(messages []kafka.Message) error {
+    tx, err := sink.db.Begin()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+    
+    stmt, err := tx.Prepare(`
+        MERGE INTO holdings h
+        USING (SELECT :1 AS client_id, :2 AS isin FROM dual) src
+        ON (h.client_id = src.client_id AND h.isin = src.isin)
+        WHEN MATCHED THEN
+            UPDATE SET h.quantity = h.quantity + :3,
+                      h.updated_at = SYSTIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (client_id, isin, quantity, created_at)
+            VALUES (:1, :2, :3, SYSTIMESTAMP)
+    `)
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+    
+    for _, msg := range messages {
+        // Parse message
+        var update HoldingUpdate
+        if err := avro.Unmarshal(schema, msg.Value, &amp;update); err != nil {
+            continue // Send to DLQ
+        }
+        
+        // Check deduplication
+        if sink.processed.Contains(update.MessageID) {
+            continue
+        }
+        
+        // Execute upsert
+        if _, err := stmt.Exec(update.ClientID, update.ISIN, update.Quantity); err != nil {
+            return err
+        }
+        
+        sink.processed.Add(update.MessageID, true)
+    }
+    
+    return tx.Commit()
+}</code></pre>
+
+            <h2>4. Monitoring & Operations</h2>
+
+            <h3>4.1 Kafka Metrics Collection</h3>
+            
+            <pre><code class="language-go">// Prometheus metrics for Kafka
+var (
+    messagesConsumed = promauto.NewCounterVec(prometheus.CounterOpts{
+        Name: &quot;kafka_messages_consumed_total&quot;,
+        Help: &quot;Total number of messages consumed&quot;,
+    }, []string{&quot;topic&quot;, &quot;consumer_group&quot;})
+    
+    consumerLag = promauto.NewGaugeVec(prometheus.GaugeOpts{
+        Name: &quot;kafka_consumer_lag&quot;,
+        Help: &quot;Consumer lag in messages&quot;,
+    }, []string{&quot;topic&quot;, &quot;partition&quot;, &quot;consumer_group&quot;})
+    
+    processingDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+        Name:    &quot;kafka_message_processing_duration_seconds&quot;,
+        Help:    &quot;Time taken to process a message&quot;,
+        Buckets: prometheus.DefBuckets,
+    }, []string{&quot;topic&quot;, &quot;status&quot;})
+)
+
+// Collect consumer metrics
+func collectConsumerMetrics(reader *kafka.Reader) {
+    go func() {
+        for {
+            stats := reader.Stats()
+            
+            consumerLag.WithLabelValues(
+                stats.Topic,
+                strconv.Itoa(stats.Partition),
+                stats.ClientID,
+            ).Set(float64(stats.Lag))
+            
+            time.Sleep(10 * time.Second)
+        }
+    }()
+}</code></pre>
+
+            <h3>4.2 Alerting Rules</h3>
+            
+            <pre><code class="language-yaml"># Prometheus alerting rules for Kafka
+groups:
+  - name: kafka_alerts
+    rules:
+      - alert: HighConsumerLag
+        expr: kafka_consumer_lag &gt; 10000
+        for: 5m
+        annotations:
+          summary: &quot;High consumer lag detected&quot;
+          description: &quot;Consumer group {{ $labels.consumer_group }} has lag of {{ $value }} messages on topic {{ $labels.topic }}&quot;
+      
+      - alert: ConsumerGroupNotProcessing
+        expr: rate(kafka_messages_consumed_total[5m]) == 0
+        for: 10m
+        annotations:
+          summary: &quot;Consumer group not processing messages&quot;
+          description: &quot;Consumer group {{ $labels.consumer_group }} has not processed any messages in 10 minutes&quot;
+      
+      - alert: HighErrorRate
+        expr: rate(kafka_message_processing_duration_seconds_count{status=&quot;error&quot;}[5m]) / rate(kafka_message_processing_duration_seconds_count[5m]) &gt; 0.1
+        for: 5m
+        annotations:
+          summary: &quot;High error rate in message processing&quot;
+          description: &quot;Error rate is {{ $value }}% for topic {{ $labels.topic }}&quot;</code></pre>
+
+            <h2>5. Performance Tuning</h2>
+            
+            <table>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Default</th>
+                    <th>Optimized</th>
+                    <th>Impact</th>
+                </tr>
+                <tr>
+                    <td>batch.size</td>
+                    <td>16KB</td>
+                    <td>1MB</td>
+                    <td>Higher throughput, more memory</td>
+                </tr>
+                <tr>
+                    <td>linger.ms</td>
+                    <td>0</td>
+                    <td>20</td>
+                    <td>Better batching, higher latency</td>
+                </tr>
+                <tr>
+                    <td>compression.type</td>
+                    <td>none</td>
+                    <td>snappy</td>
+                    <td>Reduced network usage</td>
+                </tr>
+                <tr>
+                    <td>fetch.min.bytes</td>
+                    <td>1</td>
+                    <td>10KB</td>
+                    <td>Reduced broker load</td>
+                </tr>
+                <tr>
+                    <td>max.poll.records</td>
+                    <td>500</td>
+                    <td>1000</td>
+                    <td>Better throughput</td>
+                </tr>
+                <tr>
+                    <td>session.timeout.ms</td>
+                    <td>10000</td>
+                    <td>30000</td>
+                    <td>More tolerant to GC pauses</td>
+                </tr>
+            </table>
+
+            <h2>6. Lessons from Production (TCS Experience)</h2>
+            
+            <div class="lessons">
+                <div class="lesson-card">
+                    <h3>📈 Scaling Patterns</h3>
+                    <ul>
+                        <li>Start with single consumer, scale horizontally as needed</li>
+                        <li>Use partition keys for ordering guarantees</li>
+                        <li>Implement backpressure with pause/resume</li>
+                        <li>Monitor consumer group rebalancing time</li>
+                    </ul>
+                </div>
+                
+                <div class="lesson-card">
+                    <h3>🔧 Operational Excellence</h3>
+                    <ul>
+                        <li>Always use idempotent producers/consumers</li>
+                        <li>Implement comprehensive monitoring</li>
+                        <li>Have a dead letter queue strategy</li>
+                        <li>Test failure scenarios regularly</li>
+                    </ul>
+                </div>
+                
+                <div class="lesson-card">
+                    <h3>⚡ Performance Tips</h3>
+                    <ul>
+                        <li>Batch database writes</li>
+                        <li>Use connection pooling</li>
+                        <li>Compress messages when possible</li>
+                        <li>Tune OS network buffers</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="callout">
+                <h3>🚀 Production Checklist</h3>
+                <ul>
+                    <li>✅ Idempotent producers enabled</li>
+                    <li>✅ Exactly-once processing implemented</li>
+                    <li>✅ Schema registry configured</li>
+                    <li>✅ Dead letter queue setup</li>
+                    <li>✅ Comprehensive monitoring</li>
+                    <li>✅ Alerting configured</li>
+                    <li>✅ Consumer lag monitoring</li>
+                    <li>✅ Graceful shutdown handling</li>
+                    <li>✅ Disaster recovery plan</li>
+                </ul>
+            </div>
+
+            <h2>Recommended Resources</h2>
+            <ul>
+                <li><a href="https://kafka.apache.org/documentation/" target="_blank">Kafka Official Documentation</a></li>
+                <li><a href="https://github.com/segmentio/kafka-go" target="_blank">Kafka Go Library</a></li>
+                <li><a href="https://www.confluent.io/blog/" target="_blank">Confluent Blog</a></li>
+                <li><a href="https://github.com/sujal2048/kafka-patterns" target="_blank">My Kafka Patterns Repository</a></li>
+            </ul>
+        </article>
+
+        <!-- Related Posts -->
+        <div class="related-posts">
+            <h3>Related Writings</h3>
+            <div class="related-grid">
+                <a href="../low-latency-systems/" class="related-card">
+                    <h4>Building Low-Latency Systems with GoLang and C++</h4>
+                    <p>From my TCS experience with exchange simulators</p>
+                </a>
+                <a href="../serverless-newsletter/" class="related-card">
+                    <h4>Building a Serverless Newsletter System</h4>
+                    <p>Cloudflare Workers, D1 database, and automated emails</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="post-footer">
+            <p>Working with Kafka? <a href="https://newsletter.sujal.workers.dev/subscribe" target="_blank">Subscribe for more distributed systems content</a></p>
+            <div class="footer-links">
+                <a href="../../">Home</a>
+                <a href="../../index.xml">RSS</a>
+                <a href="https://github.com/sujal2048">GitHub</a>
+                <a href="https://linkedin.com/in/sujalgupta">LinkedIn</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Syntax highlighting
+        document.querySelectorAll('pre code').forEach((block) => {
+            if (block.textContent.includes('prometheus.CounterOpts')) {
+                block.classList.add('language-go');
+            } else if (block.textContent.includes('alert:')) {
+                block.classList.add('language-yaml');
+            } else {
+                block.classList.add('language-go');
+            }
+        });
+    </script>
+</body>
+</html>
