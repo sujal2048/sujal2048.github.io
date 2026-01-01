@@ -1,0 +1,262 @@
+/* Kafka patterns specific styles */
+.kafka-flow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.stage {
+    flex: 1;
+    min-width: 180px;
+    padding: 20px;
+    background: rgba(88, 166, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stage h3 {
+    color: var(--accent);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.stage p {
+    color: var(--text-light);
+    margin: 8px 0;
+    font-size: 0.9rem;
+}
+
+.arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+    padding: 0 10px;
+}
+
+.lessons {
+    display: grid;
+    gap: 25px;
+    margin: 40px 0;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.lesson-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+}
+
+.lesson-card h3 {
+    color: var(--accent);
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lesson-card ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.lesson-card li {
+    color: var(--text-light);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+/* Rest of the styles same as previous posts */
+.post-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+}
+
+.back-link, .rss-link {
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-link:hover, .rss-link:hover {
+    text-decoration: underline;
+}
+
+.post-header {
+    margin-bottom: 40px;
+}
+
+.post-title-main {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin: 20px 0;
+    color: var(--text);
+}
+
+.post-tags-main {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.post-content {
+    line-height: 1.7;
+    font-size: 1.1rem;
+}
+
+.post-content h2 {
+    font-size: 1.8rem;
+    color: var(--accent);
+    margin: 40px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.post-content h3 {
+    font-size: 1.4rem;
+    color: var(--text);
+    margin: 30px 0 15px;
+}
+
+.post-content p {
+    margin-bottom: 20px;
+    color: var(--text-light);
+}
+
+.post-content pre {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+.post-content code {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+}
+
+.post-content ul, .post-content ol {
+    margin: 20px 0;
+    padding-left: 30px;
+    color: var(--text-light);
+}
+
+.post-content li {
+    margin-bottom: 10px;
+}
+
+.post-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 30px 0;
+}
+
+.post-content th, .post-content td {
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: left;
+}
+
+.post-content th {
+    background: var(--card-bg);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.callout {
+    background: rgba(88, 166, 255, 0.1);
+    border-left: 4px solid var(--accent);
+    padding: 20px;
+    margin: 30px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.related-posts {
+    margin: 60px 0;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+}
+
+.related-posts h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.related-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.related-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.related-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.related-card h4 {
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.related-card p {
+    color: var(--text-light);
+}
+
+.post-footer {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.post-footer p {
+    margin-bottom: 20px;
+}
+
+.post-footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.post-footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .kafka-flow {
+        flex-direction: column;
+    }
+    
+    .stage {
+        width: 100%;
+    }
+    
+    .arrow {
+        transform: rotate(90deg);
+        padding: 10px 0;
+    }
+}
