@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building a Serverless Newsletter & Contact System • Sujal Gupta</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="post-nav">
+            <a href="../../" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <a href="../../index.xml" class="rss-link" target="_blank">
+                <i class="fas fa-rss"></i> RSS
+            </a>
+        </nav>
+
+        <!-- Post Header -->
+        <header class="post-header">
+            <div class="post-meta">
+                <span class="post-category">□ Projects</span>
+                <span class="post-date">● Sujal Gupta published on 22-Dec-2024</span>
+            </div>
+            <h1 class="post-title-main">Building a Serverless Newsletter & Contact System That Scales to Millions</h1>
+            <div class="post-tags-main">
+                <span class="tag">Cloudflare-Workers</span>
+                <span class="tag">Serverless</span>
+                <span class="tag">Newsletters</span>
+                <span class="tag">Web Services</span>
+                <span class="tag">D1 Database</span>
+                <span class="tag">KV Storage</span>
+            </div>
+        </header>
+
+        <!-- Post Content -->
+        <article class="post-content">
+            <p class="post-intro">
+                Learn how I built a complete newsletter system using Cloudflare Workers, D1 database, 
+                and GitHub Pages. This system handles subscription management, automated email sending, 
+                RSS feed monitoring, and bot protection — all serverless and cost-effective.
+            </p>
+
+            <div class="architecture-diagram">
+                <h2>System Architecture</h2>
+                <div class="diagram">
+                    <div class="layer">
+                        <h3>Frontend Layer</h3>
+                        <p>GitHub Pages (Static Site)</p>
+                        <p>→ HTML/CSS/JS</p>
+                        <p>→ RSS Feed (index.xml)</p>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="layer">
+                        <h3>API Layer</h3>
+                        <p>Cloudflare Workers</p>
+                        <p>→ REST API Endpoints</p>
+                        <p>→ CRON Jobs (6-hour intervals)</p>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="layer">
+                        <h3>Data Layer</h3>
+                        <p>D1 Database (SQLite)</p>
+                        <p>→ Subscribers Table</p>
+                        <p>→ Sent Newsletters</p>
+                        <p>→ Contact Messages</p>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="layer">
+                        <h3>Storage Layer</h3>
+                        <p>KV Storage</p>
+                        <p>→ Cached Data</p>
+                        <p>→ Rate Limiting</p>
+                        <p>→ Temporary Queues</p>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="layer">
+                        <h3>Email Layer</h3>
+                        <p>Multi-provider Support</p>
+                        <p>→ Gmail SMTP</p>
+                        <p>→ MailerLite API</p>
+                        <p>→ Worker Email</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>1. Core Components</h2>
+
+            <h3>1.1 Cloudflare Worker Configuration</h3>
+            
+            <pre><code class="language-javascript">// src/index.js - Main Worker
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+// Database schema
+const DB_SCHEMA = `
+CREATE TABLE IF NOT EXISTS subscribers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT 1,
+    verification_token TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sent_newsletters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_url TEXT UNIQUE NOT NULL,
+    post_title TEXT,
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`
+
+// Subscribe endpoint
+app.post('/api/subscribe', async (c) => {
+    const { email, name } = await c.req.json()
+    
+    // Validate email
+    if (!isValidEmail(email)) {
+        return c.json({ error: 'Invalid email' }, 400)
+    }
+    
+    // Check existing
+    const existing = await c.env.DB.prepare(
+        'SELECT id FROM subscribers WHERE email = ? AND is_active = 1'
+    ).bind(email).first()
+    
+    if (existing) {
+        return c.json({ error: 'Already subscribed' }, 409)
+    }
+    
+    // Insert with verification token
+    const token = crypto.randomUUID()
+    await c.env.DB.prepare(
+        `INSERT INTO subscribers (email, name, verification_token)
+         VALUES (?, ?, ?)`
+    ).bind(email, name || null, token).run()
+    
+    // Send welcome email
+    await sendWelcomeEmail(email, name, token, c.env)
+    
+    return c.json({ 
+        success: true, 
+        message: 'Check your email to confirm subscription' 
+    })
+})
+
+// CRON handler for newsletter sending
+app.scheduled(async (event, env, ctx) => {
+    await checkAndSendNewsletters(env)
+})
+
+export default app</code></pre>
+
+            <h3>1.2 Database Schema Design</h3>
+            
+            <pre><code class="language-sql">-- Complete D1 Database Schema
+-- Subscribers table
+CREATE TABLE subscribers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    unsubscribed_at DATETIME,
+    is_active BOOLEAN DEFAULT 1,
+    verification_token TEXT,
+    verified_at DATETIME,
+    source TEXT DEFAULT 'website',
+    metadata TEXT DEFAULT '{}'
+);
+
+-- Sent newsletters tracking
+CREATE TABLE sent_newsletters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_url TEXT UNIQUE NOT NULL,
+    post_title TEXT NOT NULL,
+    post_date DATETIME NOT NULL,
+    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    recipients_count INTEGER DEFAULT 0,
+    open_count INTEGER DEFAULT 0,
+    click_count INTEGER DEFAULT 0,
+    category TEXT
+);
+
+-- Contact messages
+CREATE TABLE contact_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT 0,
+    ip_address TEXT,
+    user_agent TEXT
+);
+
+-- Analytics
+CREATE TABLE analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    event_data TEXT DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+
+            <h2>2. RSS Feed Integration</h2>
+            
+            <pre><code class="language-javascript">// RSS Parser and Newsletter Sender
+async function checkAndSendNewsletters(env) {
+    try {
+        // Fetch RSS feed
+        const response = await fetch(env.RSS_FEED_URL, {
+            headers: { 'User-Agent': env.USER_AGENT }
+        })
+        const xmlText = await response.text()
+        
+        // Parse XML
+        const posts = parseRSSFeed(xmlText)
+        
+        // Filter new posts
+        const newPosts = []
+        for (const post of posts) {
+            const existing = await env.DB.prepare(
+                'SELECT id FROM sent_newsletters WHERE post_url = ?'
+            ).bind(post.link).first()
+            
+            if (!existing) {
+                newPosts.push(post)
+            }
+        }
+        
+        // Send newsletters for new posts
+        for (const post of newPosts.slice(0, env.MAX_POSTS_PER_RUN)) {
+            await sendNewsletterForPost(post, env)
+            
+            // Store sent record
+            await env.DB.prepare(
+                `INSERT INTO sent_newsletters 
+                 (post_url, post_title, post_date, recipients_count, category)
+                 VALUES (?, ?, ?, ?, ?)`
+            ).bind(
+                post.link,
+                post.title,
+                post.pubDate,
+                await countActiveSubscribers(env.DB),
+                post.category
+            ).run()
+        }
+        
+        return { sent: newPosts.length }
+    } catch (error) {
+        console.error('Newsletter check failed:', error)
+        throw error
+    }
+}
+
+function parseRSSFeed(xmlText) {
+    const posts = []
+    const parser = new DOMParser()
+    const xmlDoc = parser.parseFromString(xmlText, 'text/xml')
+    
+    const items = xmlDoc.querySelectorAll('item')
+    items.forEach(item => {
+        posts.push({
+            title: item.querySelector('title')?.textContent || '',
+            link: item.querySelector('link')?.textContent || '',
+            description: item.querySelector('description')?.textContent || '',
+            pubDate: item.querySelector('pubDate')?.textContent || '',
+            category: item.querySelector('category')?.textContent || 'general'
+        })
+    })
+    
+    return posts
+}</code></pre>
+
+            <h2>3. Email Sending with Rate Limiting</h2>
+            
+            <pre><code class="language-javascript">// Email sender with Gmail SMTP and rate limiting
+async function sendNewsletterForPost(post, env) {
+    // Get active subscribers
+    const subscribers = await env.DB.prepare(
+        `SELECT email, name FROM subscribers 
+         WHERE is_active = 1 AND verified_at IS NOT NULL`
+    ).all()
+    
+    if (subscribers.results.length === 0) {
+        return 0
+    }
+    
+    // Prepare email content
+    const emailHtml = generateNewsletterEmail(post, env)
+    
+    // Batch sending to respect Gmail limits
+    const batches = []
+    for (let i = 0; i < subscribers.results.length; i += env.BATCH_SIZE) {
+        batches.push(subscribers.results.slice(i, i + env.BATCH_SIZE))
+    }
+    
+    let sentCount = 0
+    for (const batch of batches) {
+        const recipients = batch.map(s => s.email)
+        
+        if (env.EMAIL_PROVIDER === 'gmail') {
+            await sendViaGmail({
+                to: env.EMAIL_FROM_ADDRESS, // BCC to sender
+                bcc: recipients.join(', '),
+                subject: `📬 ${post.title} | ${env.EMAIL_FROM_NAME}`,
+                html: emailHtml,
+                text: stripHtml(emailHtml)
+            }, env)
+        }
+        
+        sentCount += batch.length
+        
+        // Rate limiting between batches
+        if (batch.length > 0) {
+            await new Promise(resolve => 
+                setTimeout(resolve, env.BATCH_WAIT_MINUTES * 60 * 1000)
+            )
+        }
+    }
+    
+    return sentCount
+}
+
+// Gmail SMTP sender
+async function sendViaGmail(emailData, env) {
+    const transporter = {
+        host: env.GMAIL_HOST,
+        port: env.GMAIL_PORT,
+        secure: false,
+        auth: {
+            user: env.GMAIL_USER,
+            pass: env.GMAIL_PASSWORD
+        }
+    }
+    
+    const message = {
+        from: `"${env.EMAIL_FROM_NAME}" <${env.GMAIL_USER}>`,
+        to: emailData.to,
+        bcc: emailData.bcc,
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
+        headers: {
+            'List-Unsubscribe': `<${env.SITE_URL}/unsubscribe>`,
+            'X-Mailer': 'Sujal-Newsletter-System/2.0'
+        }
+    }
+    
+    // Send via fetch API to SMTP service
+    const response = await fetch('https://api.smtp2go.com/v3/email/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${env.SMTP2GO_API_KEY}`
+        },
+        body: JSON.stringify({
+            api_key: env.SMTP2GO_API_KEY,
+            to: [message.to],
+            bcc: message.bcc.split(','),
+            sender: message.from,
+            subject: message.subject,
+            html_body: message.html,
+            text_body: message.text
+        })
+    })
+    
+    return response.ok
+}</code></pre>
+
+            <h2>4. Bot Protection & Security</h2>
+            
+            <pre><code class="language-javascript">// Turnstile verification
+async function validateTurnstile(token, env) {
+    const formData = new FormData()
+    formData.append('secret', env.TURNSTILE_SECRET_KEY)
+    formData.append('response', token)
+    
+    const response = await fetch(env.TURNSTILE_VERIFY_URL, {
+        method: 'POST',
+        body: formData
+    })
+    
+    const data = await response.json()
+    return data.success === true
+}
+
+// Rate limiting with KV
+async function checkRateLimit(ip, endpoint, env) {
+    const key = `rate-limit:${endpoint}:${ip}`
+    const current = await env.KV.get(key)
+    
+    if (current) {
+        const { count, resetTime } = JSON.parse(current)
+        if (Date.now() < resetTime) {
+            if (count >= 10) { // 10 requests per window
+                return false
+            }
+            await env.KV.put(key, JSON.stringify({
+                count: count + 1,
+                resetTime
+            }))
+        } else {
+            // Reset window
+            await env.KV.put(key, JSON.stringify({
+                count: 1,
+                resetTime: Date.now() + 60000 // 1 minute window
+            }))
+        }
+    } else {
+        await env.KV.put(key, JSON.stringify({
+            count: 1,
+            resetTime: Date.now() + 60000
+        }))
+    }
+    
+    return true
+}</code></pre>
+
+            <h2>5. Performance Optimizations</h2>
+            
+            <div class="optimization-grid">
+                <div class="opt-card">
+                    <h3>Database Indexing</h3>
+                    <pre><code>CREATE INDEX idx_subscribers_email 
+ON subscribers(email, is_active);
+
+CREATE INDEX idx_subscribers_active 
+ON subscribers(is_active, verified_at);
+
+CREATE INDEX idx_newsletters_url 
+ON sent_newsletters(post_url);</code></pre>
+                </div>
+                
+                <div class="opt-card">
+                    <h3>KV Caching Strategy</h3>
+                    <pre><code>// Cache frequently accessed data
+async function getCachedSubscriberCount(env) {
+    const cached = await env.KV.get('stats:subscriber-count')
+    if (cached) {
+        return JSON.parse(cached)
+    }
+    
+    const result = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM subscribers WHERE is_active = 1'
+    ).first()
+    
+    // Cache for 5 minutes
+    await env.KV.put(
+        'stats:subscriber-count',
+        JSON.stringify(result),
+        { expirationTtl: 300 }
+    )
+    
+    return result
+}</code></pre>
+                </div>
+            </div>
+
+            <h2>6. Deployment Configuration</h2>
+            
+            <pre><code class="language-toml"># wrangler.toml
+name = "sujal-newsletter"
+main = "src/index.js"
+compatibility_date = "2024-12-31"
+
+[triggers]
+crons = ["0 */6 * * *"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "abc123..."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "newsletter_db"
+database_id = "xyz789..."
+
+[vars]
+RSS_FEED_URL = "https://sujal2048.github.io/index.xml"
+EMAIL_PROVIDER = "gmail"
+BATCH_SIZE = 95
+MAX_POSTS_PER_RUN = 2
+
+# Rate limiters
+[[ratelimits]]
+name = "GLOBAL_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }</code></pre>
+
+            <h2>Cost Analysis</h2>
+            <table>
+                <tr>
+                    <th>Service</th>
+                    <th>Free Tier</th>
+                    <th>10K Subscribers</th>
+                    <th>100K Subscribers</th>
+                </tr>
+                <tr>
+                    <td>Cloudflare Workers</td>
+                    <td>100K req/day</td>
+                    <td>$5/month</td>
+                    <td>$20/month</td>
+                </tr>
+                <tr>
+                    <td>D1 Database</td>
+                    <td>5M reads</td>
+                    <td>Included</td>
+                    <td>$5/month</td>
+                </tr>
+                <tr>
+                    <td>KV Storage</td>
+                    <td>1M reads</td>
+                    <td>Included</td>
+                    <td>$0.50/month</td>
+                </tr>
+                <tr>
+                    <td>Gmail SMTP</td>
+                    <td>500 emails/day</td>
+                    <td>Free</td>
+                    <td>SMTP2Go $10/month</td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>Free</strong></td>
+                    <td><strong>$5/month</strong></td>
+                    <td><strong>$35/month</strong></td>
+                </tr>
+            </table>
+
+            <h2>Monitoring & Analytics</h2>
+            
+            <pre><code class="language-javascript">// Analytics tracking
+async function trackEvent(eventType, eventData, env, request) {
+    await env.DB.prepare(
+        `INSERT INTO analytics (event_type, event_data, ip_address, user_agent)
+         VALUES (?, ?, ?, ?)`
+    ).bind(
+        eventType,
+        JSON.stringify(eventData),
+        request.headers.get('CF-Connecting-IP'),
+        request.headers.get('User-Agent')
+    ).run()
+}
+
+// Newsletter open tracking
+app.get('/api/track/open/:newsletterId', async (c) => {
+    const newsletterId = c.req.param('newsletterId')
+    await env.DB.prepare(
+        'UPDATE sent_newsletters SET open_count = open_count + 1 WHERE id = ?'
+    ).bind(newsletterId).run()
+    
+    // Return transparent 1x1 pixel
+    return new Response(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        {
+            headers: {
+                'Content-Type': 'image/gif',
+                'Cache-Control': 'no-store'
+            }
+        }
+    )
+})</code></pre>
+
+            <div class="callout">
+                <h3>🚀 Production Ready Features</h3>
+                <ul>
+                    <li>✅ Automated RSS feed monitoring every 6 hours</li>
+                    <li>✅ Multi-email provider support (Gmail, MailerLite, Worker Email)</li>
+                    <li>✅ Bot protection with Cloudflare Turnstile</li>
+                    <li>✅ Rate limiting at multiple levels</li>
+                    <li>✅ Database backups with D1</li>
+                    <li>✅ Email open/click tracking</li>
+                    <li>✅ Unsubscribe management</li>
+                    <li>✅ Contact form with spam protection</li>
+                    <li>✅ Cost-effective (scales from free to ~$35/month for 100K subs)</li>
+                </ul>
+            </div>
+
+            <h2>Getting Started</h2>
+            
+            <pre><code class="language-bash"># Clone the repository
+git clone https://github.com/sujal2048/newsletter-system.git
+cd newsletter-system
+
+# Install dependencies
+npm install
+
+# Create Cloudflare resources
+npx wrangler kv:namespace create "KV"
+npx wrangler d1 create "newsletter_db"
+
+# Update wrangler.toml with your IDs
+# Set secrets
+npx wrangler secret put EMAIL_FROM_ADDRESS
+npx wrangler secret put GMAIL_USER
+npx wrangler secret put GMAIL_PASSWORD
+
+# Deploy
+npx wrangler deploy
+
+# Initialize database
+npx wrangler d1 execute newsletter_db --file schema.sql</code></pre>
+
+            <h2>Live Demo & Source Code</h2>
+            <p>This system powers my own newsletter. You can:</p>
+            <ul>
+                <li><a href="https://sujal2048.github.io" target="_blank">View the blog</a></li>
+                <li><a href="https://newsletter.sujal.workers.dev/subscribe" target="_blank">Subscribe to newsletter</a></li>
+                <li><a href="https://github.com/sujal2048/newsletter-system" target="_blank">View source code on GitHub</a></li>
+                <li><a href="https://sujal2048.github.io/index.xml" target="_blank">Check RSS feed</a></li>
+            </ul>
+        </article>
+
+        <!-- Related Posts -->
+        <div class="related-posts">
+            <h3>Related Writings</h3>
+            <div class="related-grid">
+                <a href="../low-latency-systems/" class="related-card">
+                    <h4>Building Low-Latency Systems with GoLang and C++</h4>
+                    <p>From my TCS experience with exchange simulators</p>
+                </a>
+                <a href="../kafka-patterns/" class="related-card">
+                    <h4>Kafka Integration Patterns for Real-Time Systems</h4>
+                    <p>Producer-consumer patterns and exactly-once semantics</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="post-footer">
+            <p>Want to build your own newsletter system? <a href="https://github.com/sujal2048/newsletter-system" target="_blank">Fork the repository</a></p>
+            <div class="footer-links">
+                <a href="../../">Home</a>
+                <a href="../../index.xml">RSS</a>
+                <a href="https://github.com/sujal2048">GitHub</a>
+                <a href="https://linkedin.com/in/sujalgupta">LinkedIn</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Syntax highlighting
+        document.querySelectorAll('pre code').forEach((block) => {
+            if (block.textContent.includes('CREATE TABLE')) {
+                block.classList.add('language-sql');
+            } else if (block.textContent.includes('wrangler.toml')) {
+                block.classList.add('language-toml');
+            } else if (block.textContent.includes('git clone')) {
+                block.classList.add('language-bash');
+            } else {
+                block.classList.add('language-javascript');
+            }
+        });
+    </script>
+</body>
+</html>
