@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Data Structures for Competitive Programming • Sujal Gupta</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="post-nav">
+            <a href="../../" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <a href="../../index.xml" class="rss-link" target="_blank">
+                <i class="fas fa-rss"></i> RSS
+            </a>
+        </nav>
+
+        <!-- Post Header -->
+        <header class="post-header">
+            <div class="post-meta">
+                <span class="post-category">□ Algorithms</span>
+                <span class="post-date">● Sujal Gupta published on 24-Dec-2024</span>
+            </div>
+            <h1 class="post-title-main">Advanced Data Structures for Competitive Programming</h1>
+            <div class="post-tags-main">
+                <span class="tag">Data Structures</span>
+                <span class="tag">Algorithms</span>
+                <span class="tag">Competitive Programming</span>
+                <span class="tag">C++</span>
+                <span class="tag">CodeChef</span>
+            </div>
+        </header>
+
+        <!-- Post Content -->
+        <article class="post-content">
+            <p class="post-intro">
+                From my experience as a CodeChef Problem Setter, mastering advanced data structures 
+                is crucial for solving complex problems efficiently. Here's a deep dive into essential 
+                structures every competitive programmer should know.
+            </p>
+
+            <h2>1. Segment Trees with Lazy Propagation</h2>
+            <p>For range queries and updates in O(log n):</p>
+            
+            <pre><code class="language-cpp">// Segment Tree with Lazy Propagation
+class SegmentTree {
+    vector&lt;int&gt; tree, lazy;
+    int n;
+    
+    void build(int node, int start, int end, vector&lt;int&gt;& arr) {
+        if (start == end) {
+            tree[node] = arr[start];
+            return;
+        }
+        int mid = (start + end) / 2;
+        build(2*node, start, mid, arr);
+        build(2*node+1, mid+1, end, arr);
+        tree[node] = tree[2*node] + tree[2*node+1];
+    }
+    
+    void updateRange(int node, int start, int end, int l, int r, int val) {
+        if (lazy[node] != 0) {
+            tree[node] += (end - start + 1) * lazy[node];
+            if (start != end) {
+                lazy[2*node] += lazy[node];
+                lazy[2*node+1] += lazy[node];
+            }
+            lazy[node] = 0;
+        }
+        
+        if (start > end || start > r || end < l) return;
+        
+        if (start >= l && end <= r) {
+            tree[node] += (end - start + 1) * val;
+            if (start != end) {
+                lazy[2*node] += val;
+                lazy[2*node+1] += val;
+            }
+            return;
+        }
+        
+        int mid = (start + end) / 2;
+        updateRange(2*node, start, mid, l, r, val);
+        updateRange(2*node+1, mid+1, end, l, r, val);
+        tree[node] = tree[2*node] + tree[2*node+1];
+    }
+    
+    int queryRange(int node, int start, int end, int l, int r) {
+        if (start > end || start > r || end < l) return 0;
+        
+        if (lazy[node] != 0) {
+            tree[node] += (end - start + 1) * lazy[node];
+            if (start != end) {
+                lazy[2*node] += lazy[node];
+                lazy[2*node+1] += lazy[node];
+            }
+            lazy[node] = 0;
+        }
+        
+        if (start >= l && end <= r) return tree[node];
+        
+        int mid = (start + end) / 2;
+        int left = queryRange(2*node, start, mid, l, r);
+        int right = queryRange(2*node+1, mid+1, end, l, r);
+        return left + right;
+    }
+public:
+    SegmentTree(vector&lt;int&gt;& arr) {
+        n = arr.size();
+        tree.resize(4*n);
+        lazy.resize(4*n, 0);
+        build(1, 0, n-1, arr);
+    }
+};</code></pre>
+
+            <h3>Applications:</h3>
+            <ul>
+                <li><strong>Range Sum Queries</strong>: Sum of elements in a range with updates</li>
+                <li><strong>Range Minimum/Maximum</strong>: Find min/max in a range</li>
+                <li><strong>Range GCD/LCM</strong>: For mathematical operations</li>
+                <li><strong>Inversion Count</strong>: Using merge sort tree variant</li>
+            </ul>
+
+            <h2>2. Fenwick Tree (Binary Indexed Tree)</h2>
+            <p>More efficient than Segment Tree for prefix sum queries:</p>
+            
+            <pre><code class="language-cpp">// Fenwick Tree Implementation
+class FenwickTree {
+    vector&lt;int&gt; bit;
+    int n;
+    
+    int sum(int idx) {
+        int ret = 0;
+        for (; idx > 0; idx -= idx & -idx)
+            ret += bit[idx];
+        return ret;
+    }
+    
+public:
+    FenwickTree(int size) {
+        n = size;
+        bit.assign(n + 1, 0);
+    }
+    
+    FenwickTree(vector&lt;int&gt;& arr) : FenwickTree(arr.size()) {
+        for (int i = 0; i < n; i++)
+            add(i, arr[i]);
+    }
+    
+    void add(int idx, int delta) {
+        for (++idx; idx <= n; idx += idx & -idx)
+            bit[idx] += delta;
+    }
+    
+    int range_sum(int l, int r) {
+        return sum(r + 1) - sum(l);
+    }
+    
+    // Lower bound: smallest idx such that prefix sum >= val
+    int lower_bound(int val) {
+        int pos = 0, sum = 0;
+        for (int i = 20; i >= 0; i--) {
+            int next = pos + (1 << i);
+            if (next <= n && sum + bit[next] < val) {
+                sum += bit[next];
+                pos = next;
+            }
+        }
+        return pos;
+    }
+};</code></pre>
+
+            <h3>When to Use:</h3>
+            <table>
+                <tr>
+                    <th>Use Fenwick Tree When</th>
+                    <th>Use Segment Tree When</th>
+                </tr>
+                <tr>
+                    <td>Only need prefix/range sum queries</td>
+                    <td>Need complex range operations</td>
+                </tr>
+                <tr>
+                    <td>Memory is constrained</td>
+                    <td>Need range min/max with updates</td>
+                </tr>
+                <tr>
+                    <td>Need O(1) point updates</td>
+                    <td>Need lazy propagation</td>
+                </tr>
+                <tr>
+                    <td>Implementing order statistics</td>
+                    <td>Need to merge nodes in custom ways</td>
+                </tr>
+            </table>
+
+            <h2>3. Advanced Trie Implementations</h2>
+            <p>Beyond basic prefix matching - my Auto Complete project extensions:</p>
+            
+            <pre><code class="language-cpp">// Compressed Trie (Radix Tree)
+class CompressedTrieNode {
+    unordered_map&lt;string, CompressedTrieNode*&gt; children;
+    bool isEnd;
+    vector&lt;string&gt; suggestions;
+    
+public:
+    CompressedTrieNode() : isEnd(false) {}
+    
+    void insert(const string& word) {
+        insertUtil(word, 0);
+    }
+    
+    vector&lt;string&gt; autocomplete(const string& prefix) {
+        return autocompleteUtil(prefix, 0);
+    }
+};
+
+// Trie for XOR operations (XOR Trie)
+class XorTrie {
+    struct Node {
+        Node* children[2];
+        Node() {
+            children[0] = children[1] = nullptr;
+        }
+    };
+    
+    Node* root;
+    
+public:
+    XorTrie() {
+        root = new Node();
+    }
+    
+    void insert(int num) {
+        Node* curr = root;
+        for (int i = 31; i >= 0; i--) {
+            int bit = (num >> i) & 1;
+            if (!curr->children[bit])
+                curr->children[bit] = new Node();
+            curr = curr->children[bit];
+        }
+    }
+    
+    int maxXor(int num) {
+        Node* curr = root;
+        int result = 0;
+        for (int i = 31; i >= 0; i--) {
+            int bit = (num >> i) & 1;
+            int desired = 1 - bit;
+            
+            if (curr->children[desired]) {
+                result |= (1 << i);
+                curr = curr->children[desired];
+            } else {
+                curr = curr->children[bit];
+            }
+        }
+        return result;
+    }
+};</code></pre>
+
+            <h2>4. Disjoint Set Union (Union-Find) with Optimizations</h2>
+            
+            <pre><code class="language-cpp">// DSU with path compression and union by rank
+class DSU {
+    vector&lt;int&gt; parent, rank, size;
+    
+public:
+    DSU(int n) {
+        parent.resize(n);
+        rank.resize(n, 0);
+        size.resize(n, 1);
+        for (int i = 0; i < n; i++)
+            parent[i] = i;
+    }
+    
+    int find(int x) {
+        if (parent[x] != x)
+            parent[x] = find(parent[x]); // Path compression
+        return parent[x];
+    }
+    
+    void unite(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+        
+        if (rootX == rootY) return;
+        
+        // Union by rank
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+            size[rootY] += size[rootX];
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+            size[rootX] += size[rootY];
+        } else {
+            parent[rootY] = rootX;
+            size[rootX] += size[rootY];
+            rank[rootX]++;
+        }
+    }
+    
+    bool connected(int x, int y) {
+        return find(x) == find(y);
+    }
+    
+    int componentSize(int x) {
+        return size[find(x)];
+    }
+    
+    // For dynamic connectivity problems
+    void rollback() {
+        // Implementation for persistent DSU
+    }
+};</code></pre>
+
+            <h2>5. Sparse Table for RMQ</h2>
+            <p>For Range Minimum Queries with O(1) query and O(n log n) preprocessing:</p>
+            
+            <pre><code class="language-cpp">// Sparse Table for RMQ (Range Minimum Query)
+class SparseTable {
+    vector&lt;vector&lt;int&gt;&gt; st;
+    vector&lt;int&gt; log;
+    
+    int operation(int a, int b) {
+        return min(a, b); // Can be max, gcd, etc.
+    }
+    
+public:
+    SparseTable(vector&lt;int&gt;& arr) {
+        int n = arr.size();
+        int k = log2(n) + 1;
+        
+        st.resize(n, vector&lt;int&gt;(k));
+        log.resize(n + 1);
+        
+        // Precompute logs
+        log[1] = 0;
+        for (int i = 2; i <= n; i++)
+            log[i] = log[i/2] + 1;
+        
+        // Build sparse table
+        for (int i = 0; i < n; i++)
+            st[i][0] = arr[i];
+        
+        for (int j = 1; j < k; j++) {
+            for (int i = 0; i + (1 << j) <= n; i++) {
+                st[i][j] = operation(
+                    st[i][j-1],
+                    st[i + (1 << (j-1))][j-1]
+                );
+            }
+        }
+    }
+    
+    int query(int l, int r) {
+        int j = log[r - l + 1];
+        return operation(
+            st[l][j],
+            st[r - (1 << j) + 1][j]
+        );
+    }
+};</code></pre>
+
+            <h2>Problem-Solving Patterns</h2>
+            
+            <div class="pattern-grid">
+                <div class="pattern-card">
+                    <h3>Sliding Window + Deque</h3>
+                    <p>For problems like "Maximum in all subarrays of size k":</p>
+                    <pre><code>vector&lt;int&gt; maxSlidingWindow(vector&lt;int&gt;& nums, int k) {
+    deque&lt;int&gt; dq;
+    vector&lt;int&gt; result;
+    for (int i = 0; i < nums.size(); i++) {
+        // Remove indices outside window
+        if (!dq.empty() && dq.front() == i - k)
+            dq.pop_front();
+        
+        // Maintain decreasing order
+        while (!dq.empty() && nums[dq.back()] <= nums[i])
+            dq.pop_back();
+        
+        dq.push_back(i);
+        
+        if (i >= k - 1)
+            result.push_back(nums[dq.front()]);
+    }
+    return result;
+}</code></pre>
+                </div>
+                
+                <div class="pattern-card">
+                    <h3>Mo's Algorithm</h3>
+                    <p>For offline range queries in O((n+q)√n):</p>
+                    <pre><code>struct Query {
+    int l, r, idx;
+    bool operator<(Query other) const {
+        if (l / block != other.l / block)
+            return l < other.l;
+        return (l / block & 1) ? (r < other.r) : (r > other.r);
+    }
+};</code></pre>
+                </div>
+            </div>
+
+            <h2>Complexity Analysis Table</h2>
+            <table>
+                <tr>
+                    <th>Data Structure</th>
+                    <th>Build Time</th>
+                    <th>Query Time</th>
+                    <th>Update Time</th>
+                    <th>Space</th>
+                    <th>Best For</th>
+                </tr>
+                <tr>
+                    <td>Segment Tree</td>
+                    <td>O(n)</td>
+                    <td>O(log n)</td>
+                    <td>O(log n)</td>
+                    <td>O(4n)</td>
+                    <td>Range updates/queries</td>
+                </tr>
+                <tr>
+                    <td>Fenwick Tree</td>
+                    <td>O(n)</td>
+                    <td>O(log n)</td>
+                    <td>O(log n)</td>
+                    <td>O(n)</td>
+                    <td>Prefix sum, point updates</td>
+                </tr>
+                <tr>
+                    <td>Sparse Table</td>
+                    <td>O(n log n)</td>
+                    <td>O(1)</td>
+                    <td>Not supported</td>
+                    <td>O(n log n)</td>
+                    <td>Static RMQ</td>
+                </tr>
+                <tr>
+                    <td>Trie</td>
+                    <td>O(L)</td>
+                    <td>O(L)</td>
+                    <td>O(L)</td>
+                    <td>O(26^L)</td>
+                    <td>String prefix search</td>
+                </tr>
+            </table>
+
+            <div class="callout">
+                <p><strong>Pro Tip:</strong> During CodeChef problem setting, we often create problems 
+                that require combining multiple data structures. Practice identifying which structure 
+                to use based on operation requirements rather than memorizing implementations.</p>
+            </div>
+
+            <h2>Practice Problems</h2>
+            <ul>
+                <li><a href="https://codeforces.com/problemset/problem/61/E" target="_blank">CF 61E - Enemy is weak</a> (Fenwick Tree)</li>
+                <li><a href="https://www.spoj.com/problems/KQUERY/" target="_blank">SPOJ KQUERY</a> (Merge Sort Tree)</li>
+                <li><a href="https://codeforces.com/problemset/problem/1476/D" target="_blank">CF 1476D - Journey</a> (DSU)</li>
+                <li><a href="https://cses.fi/problemset/task/1648" target="_blank">CSES Range Sum Queries II</a> (Fenwick/Segment Tree)</li>
+                <li><a href="https://leetcode.com/problems/maximum-xor-of-two-numbers-in-an-array/" target="_blank">LeetCode 421</a> (XOR Trie)</li>
+            </ul>
+        </article>
+
+        <!-- Related Posts -->
+        <div class="related-posts">
+            <h3>Related Writings</h3>
+            <div class="related-grid">
+                <a href="../low-latency-systems/" class="related-card">
+                    <h4>Building Low-Latency Systems with GoLang and C++</h4>
+                    <p>Goroutine pools, memory optimization, and Linux tuning</p>
+                </a>
+                <a href="../serverless-newsletter/" class="related-card">
+                    <h4>Building a Serverless Newsletter System</h4>
+                    <p>Cloudflare Workers, D1 database, and automated emails</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="post-footer">
+            <p>Mastered these data structures? <a href="https://newsletter.sujal.workers.dev/subscribe" target="_blank">Subscribe for more CP insights</a></p>
+            <div class="footer-links">
+                <a href="../../">Home</a>
+                <a href="../../index.xml">RSS</a>
+                <a href="https://github.com/sujal2048">GitHub</a>
+                <a href="https://codeforces.com/profile/sujal2048">Codeforces</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Syntax highlighting
+        document.querySelectorAll('pre code').forEach((block) => {
+            block.classList.add('language-cpp');
+        });
+    </script>
+</body>
+</html>
