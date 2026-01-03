@@ -1,11 +1,11 @@
-# sujal2048.github.io
+# NEWSLETTER SYSTEM AND CONTACT SYSTEM
 
 Personal website and newsletter system for Sujal Gupta.
 
 ## 🌐 Live Links
 - **Website**: https://sujal2048.github.io
 - **RSS Feed**: https://sujal2048.github.io/index.xml
-- **Newsletter System**: https://web.sujal.workers.dev
+- **Newsletter System**: https://sujal-newsletter.sujalgupta.workers.dev/
 
 ## 📬 Newsletter Features
 - Subscribe/Unsubscribe functionality
