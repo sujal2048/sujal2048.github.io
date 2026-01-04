@@ -1,4 +1,4 @@
-# NEWSLETTER SYSTEM AND CONTACT SYSTEM
+# PERSONAL WEBSITE AND CONTACT SYSTEM
 
 Personal website and newsletter system for Sujal Gupta.
 
