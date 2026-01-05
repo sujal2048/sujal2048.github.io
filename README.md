@@ -1,6 +1,6 @@
 # PERSONAL WEBSITE AND CONTACT SYSTEM
 
-Personal website and newsletter system for Sujal Gupta.
+Personal website and newsletter system and contact form for Sujal Gupta 
 
 ## 🌐 Live Links
 - **Website**: https://sujal2048.github.io
