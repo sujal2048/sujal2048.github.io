@@ -21,6 +21,6 @@ Personal website and newsletter system and contact form for Sujal Gupta
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare KV
 - **Email Service**: Gmail SMTP
-- **Security**: Cloudflare Turnstile
+- **Security**:  Cloudflare Turnstile
 
 ## 📁 Project Structure
