@@ -25,6 +25,24 @@
             <category>GoLang</category>
             <category>C++</category>
         </item>
+
+         <item>
+            <title>Collaborative Editing (CRDT and OT)</title>
+            <link>https://sujal2048.github.io/posts/colaborative-task-board/</link>
+            <description>
+                <![CDATA[
+                <p>The general theory of collaboration algorithms is to transmit changes between users with the goal of "eventual consistency". If multiple users make changes at the same time their copies of the document might look different for a while, but eventually every user's view will converge to be the same. This is done through what I call a "baseline"; incoming changes are integrated into the local data to form new baselines and local changes are sent based on the current baseline.</p>
+                <p><strong>Category:</strong> □ System-Design</p>
+                <p><strong>Published:</strong> 26-Dec-2024</p>
+                ]]>
+            </description>
+            <pubDate>Thu, 26 Dec 2024 14:00:00 GMT</pubDate>
+            <guid isPermaLink="false">Collaborative-Task-Board</guid>
+            <category>System-Design</category>
+            <category>Docker</category>
+            <category>Full Stack</category>
+        </item>
+
         
         <item>
             <title>Advanced Data Structures for Competitive Programming</title>
