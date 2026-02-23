@@ -1,0 +1,150 @@
+/* Collaborative Task Board post specific styles */
+
+.architecture-diagram {
+    margin: 40px 0;
+    padding: 30px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.layer {
+    background: rgba(88, 166, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.layer h3 {
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.layer p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin: 5px 0;
+}
+
+.arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+    text-align: center;
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+.lessons {
+    display: grid;
+    gap: 25px;
+    margin: 40px 0;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.lesson-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+    transition: transform 0.2s;
+}
+
+.lesson-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.lesson-card h3 {
+    color: var(--accent);
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lesson-card p {
+    color: var(--text-light);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.lesson-card ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.lesson-card li {
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+/* Table enhancements (already in global but we can refine) */
+.post-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 30px 0;
+    font-size: 0.95rem;
+}
+
+.post-content th {
+    background: var(--card-bg);
+    color: var(--accent);
+    font-weight: 600;
+    padding: 12px;
+    border: 1px solid var(--border);
+}
+
+.post-content td {
+    padding: 12px;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+}
+
+/* Code block adjustments */
+.post-content pre {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+.post-content code {
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+}
+
+/* Callout for CRDT insight */
+.callout {
+    background: rgba(88, 166, 255, 0.1);
+    border-left: 4px solid var(--accent);
+    padding: 20px;
+    margin: 30px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.callout p {
+    margin: 0;
+    color: var(--text-light);
+}
+
+.callout strong {
+    color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .lessons {
+        grid-template-columns: 1fr;
+    }
+    
+    .architecture-diagram {
+        padding: 20px;
+    }
+}
